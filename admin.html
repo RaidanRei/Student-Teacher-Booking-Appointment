@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Admin Dashboard - School Portal</title>
+    <!-- Link CSS -->
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <!-- ===================================================== HEADER SECTION ===================================================== -->
+    <header class="topbar">
+        <!-- Left: Portal Logo & Title -->
+        <div class="portal-title">🏫 School Portal</div>
+        <!-- Center: Current Page Title -->
+        <h1>👑Admin Dashboard</h1>
+        <!-- Right: Logout Button -->
+        <button id="btn-logout">🚪Logout</button>
+    </header>
+
+    <!-- ===================================================== MAIN ADMIN DASHBOARD CONTAINER ===================================================== -->
+    <main class="container">
+        <!-- === ADD TEACHER === -->
+        <section class="card">
+            <h2>➕Add Teacher</h2>
+            <!-- Teacher Name -->
+            <input id="t-name" placeholder="Full Name">
+            <!-- Department -->
+            <input id="t-dept" placeholder="Department">
+            <!-- Subject -->
+            <input id="t-subject" placeholder="Subject">
+            <!-- Email -->
+            <input id="t-email" placeholder="Email" type="email">
+            <!-- Password -->
+            <input id="t-password" placeholder="Password" type="password">
+            <!-- Add Button -->
+            <button id="btn-add-teacher">Add Teacher</button>
+        </section>
+
+        <!-- === TEACHER LIST === -->
+        <section class="card">
+            <h2>👨‍🏫|👩‍🏫Teacher List</h2>
+            <!-- Teacher List -->
+            <div id="teacher-list">Loading...</div>
+        </section>
+
+        <!-- === PENDING STUDENTS === -->
+        <section class="card">
+            <h2>🟠Pending Students</h2>
+            <!-- Pending Students List -->
+            <div id="student-list">Loading...</div>
+        </section>
+    </main>
+
+    <!-- ===================================================== FOOTER ===================================================== -->
+    <footer class="footer">
+        <p>© <span id="year"></span> School Portal — Designed by Bariy Aydika</p>
+    </footer>
+
+    <!-- === FIREBASE SCRIPT === -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+    <script>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBrukyctXfmFKPQDnqtAVcTxMUfsUjz9hw",
+            authDomain: "student-booking-appointm-7f7eb.firebaseapp.com",
+            // databaseURL ini tidak dipakai, tapi boleh dibiarkan di config
+            databaseURL: "https://student-booking-appointm-7f7eb-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "student-booking-appointm-7f7eb",
+            storageBucket: "student-booking-appointm-7f7eb.firebasestorage.app",
+            messagingSenderId: "574377405304",
+            appId: "1:574377405304:web:a5d0fb7fee3ca99945b68d"
+        };
+
+        // Firebase Initialization (Use 'var' to make them globally accessible in rules.js)
+        var app = firebase.initializeApp(firebaseConfig);
+
+        // Auth Initialization
+        var auth = firebase.auth();
+
+        // ✨ Initialize Firestore here (Only Firestore is needed)
+        var db = app.firestore();
+
+        console.log("Connection to Firestore Successful!");
+    </script>
+
+    <!-- Link JS -->
+    <script src="rules.js"></script>
+</body>
+
+</html>

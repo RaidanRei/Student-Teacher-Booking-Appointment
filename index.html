@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>School Portal - Login & Register</title>
+    <!-- Link CSS -->
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <!-- ===================================================== HEADER SECTION ===================================================== -->
+    <header class="topbar">
+        <div class="portal-title">🏫 School Portal</div>
+        <h1>👋Welcome</h1>
+    </header>
+
+    <!-- ===================================================== MAIN CONTENT ===================================================== -->
+    <div class="container">
+        <!-- === LOGIN CARD === -->
+        <div class="auth-box">
+            <h2>Login</h2>
+            <!-- Email input -->
+            <input id="login-email" type="email" placeholder="Email" />
+            <!-- Password input -->
+            <input id="login-password" type="password" placeholder="Password" />
+            <!-- Button login -->
+            <button id="btn-login">🔑Login</button>
+
+            <hr style="margin: 18px 0; border: none; border-top: 1px solid #eee;" />
+
+            <!-- === REGISTER CARD === -->
+            <h2>Register</h2>
+            <!-- Name -->
+            <input id="reg-name" placeholder="Full name" />
+            <!-- Email -->
+            <input id="reg-email" type="email" placeholder="Email" />
+            <!-- Password -->
+            <input id="reg-password" type="password" placeholder="Password" />
+            <!-- Role Selection -->
+            <select id="reg-role">
+                <option value="student">🎓 Student</option>
+                <option value="teacher">👩‍🏫 Teacher</option>
+                <option value="admin">👑 Admin</option>
+            </select>
+            <!-- Register button -->
+            <button id="btn-register">Register</button>
+
+            <div id="msg" style="margin-top: 10px; font-weight: 600;"></div>
+        </div>
+    </div>
+
+    <!-- ===================================================== FOOTER ===================================================== -->
+    <footer class="footer">
+        <p>© <span id="year"></span> School Portal — Bariy Aydika</p>
+    </footer>
+
+    <!-- === FIREBASE SCRIPT === -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+    <script>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBrukyctXfmFKPQDnqtAVcTxMUfsUjz9hw",
+            authDomain: "student-booking-appointm-7f7eb.firebaseapp.com",
+            // databaseURL ini tidak dipakai, tapi boleh dibiarkan di config
+            databaseURL: "https://student-booking-appointm-7f7eb-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "student-booking-appointm-7f7eb",
+            storageBucket: "student-booking-appointm-7f7eb.firebasestorage.app",
+            messagingSenderId: "574377405304",
+            appId: "1:574377405304:web:a5d0fb7fee3ca99945b68d"
+        };
+
+        // Firebase Initialization (Use 'var' to make them globally accessible in rules.js)
+        var app = firebase.initializeApp(firebaseConfig);
+
+        // Auth Initialization
+        var auth = firebase.auth();
+
+        // ✨ Initialize Firestore here (Only Firestore is needed)
+        var db = app.firestore();
+
+        console.log("Connection to Firestore Successful!");
+    </script>
+
+    <!-- Link JS -->
+    <script src="rules.js"></script>
+</body>
+
+</html>

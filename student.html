@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Student Dashboard</title>
+    <!-- Link CSS -->
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <!-- ===================================================== HEADER SECTION ===================================================== -->
+    <header class="topbar">
+        <!-- Left: Portal Logo & Title -->
+        <div class="portal-title">🏫 School Portal</div>
+        <!-- Center: Page title -->
+        <h1>🧑‍🎓|👩‍🎓Student Dashboard</h1>
+        <!-- Right: Logout button -->
+        <button id="btn-logout">🚪Logout</button>
+    </header>
+
+    <!-- ===================================================== MAIN STUDENT DASHBOARD CONTAINER ===================================================== -->
+    <main class="container">
+        <!-- === STUDENT INFORMATION === -->
+        <div class="card">
+            <h2>🎓Student Information</h2>
+            <p>📇<b>Name:</b> <span id="student-name"></span></p>
+            <p>📧<b>Email:</b> <span id="student-email"></span></p>
+        </div>
+
+        <!-- === REQUEST APPOINTMENT === -->
+        <section class="card">
+            <h2>🙋‍♂️|🙋‍♀️Request Appointment</h2>
+            <!-- Teacher Dropdown List -->
+            <select id="teacher-select"></select>
+            <!-- Date Input -->
+            <input id="app-date" type="date">
+            <!-- Time Input -->
+            <input id="app-time" type="time">
+            <!-- Optional Notes Field -->
+            <textarea id="app-notes" placeholder="Notes..."></textarea>
+            <!-- Button Request Appointment -->
+            <button id="btn-request-appointment">Request Appointment</button>
+        </section>
+
+        <!-- === MY APPOINTMENTS === -->
+        <section class="card">
+            <h2>🗓️My Appointments</h2>
+            <!-- Appointment List -->
+            <div id="my-appointments">Loading...</div>
+        </section>
+
+        <!-- === MESSAGES === -->
+        <section class="card">
+            <h2>🗨️Messages</h2>
+            <!-- Messages List -->
+            <div id="my-messages"></div>
+        </section>
+
+        <!-- === MESSAGES TO TEACHER === -->
+        <section class="card">
+            <h2>✍️Send Message to Teacher</h2>
+            <!-- Message Input Box -->
+            <textarea id="msg-input" placeholder="Type your message..."></textarea>
+            <!-- Send Button Triggers Message -->
+            <button id="btn-send">➡️Send</button>
+        </section>
+    </main>
+
+    <!-- ===================================================== FOOTER ===================================================== -->
+    <footer class="footer">
+        <p>© <span id="year"></span> School Portal — Designed by Bariy Aydika</p>
+    </footer>
+
+    <!-- === FIREBASE SCRIPT === -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+    <script>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBrukyctXfmFKPQDnqtAVcTxMUfsUjz9hw",
+            authDomain: "student-booking-appointm-7f7eb.firebaseapp.com",
+            // databaseURL ini tidak dipakai, tapi boleh dibiarkan di config
+            databaseURL: "https://student-booking-appointm-7f7eb-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "student-booking-appointm-7f7eb",
+            storageBucket: "student-booking-appointm-7f7eb.firebasestorage.app",
+            messagingSenderId: "574377405304",
+            appId: "1:574377405304:web:a5d0fb7fee3ca99945b68d"
+        };
+
+        // Firebase Initialization (Use 'var' to make them globally accessible in rules.js)
+        var app = firebase.initializeApp(firebaseConfig);
+
+        // Auth Initialization
+        var auth = firebase.auth();
+
+        // ✨ Initialize Firestore here (Only Firestore is needed)
+        var db = app.firestore();
+
+        console.log("Connection to Firestore Successful!");
+    </script>
+
+    <!-- Link JS -->
+    <script src="rules.js"></script>
+</body>
+
+</html>
