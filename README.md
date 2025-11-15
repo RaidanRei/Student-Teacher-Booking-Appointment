@@ -1,6 +1,6 @@
 🧾 README.md
 
-# 🍽️ Catering & Ordering Website
+# 🎓 Student–Teacher Booking Appointment
 
 This is a **modern appointment booking system** built with **HTML, CSS, and JavaScript**, now fully powered by **Firebase Authentication + Firebase Firestore** for real-time data, secure login, and multi-role dashboards (Admin, Teacher, Student).
 
