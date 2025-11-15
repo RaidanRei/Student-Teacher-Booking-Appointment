@@ -20,7 +20,9 @@ Experience real-time appointment approval and role-based dashboard access.
 | Screenshot |
 | ---------- |
 
-![Screenshot](./images/thumbnail_indian_foodie.webp)
+![Screenshot](./images/admin_dashboard.png)
+![Screenshot](./images/teacher_dashboard.png)
+![Screenshot](./images/student_dashboard.png)
 
 ---
 
