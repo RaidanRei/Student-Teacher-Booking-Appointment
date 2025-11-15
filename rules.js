@@ -426,11 +426,14 @@ function initTeacher() {
 }
 
 function loadTeacherAppointments() {
-  const apptList = el("pending-appointments");
-  if (!apptList) return;
+  const pendingList = el("pending-appointments");
+  const allList = el("all-appointments");
+  if (!pendingList || !allList) return;
 
-  apptList.innerHTML = "Loading appointments...";
+  pendingList.innerHTML = "Loading pending appointments...";
+  allList.innerHTML = "Loading all appointments...";
 
+  // ---------------- Load Pending Appointments ----------------
   db.collection("appointments")
     .where("teacherEmail", "==", user.email)
     .where("status", "==", "Pending")
@@ -441,7 +444,7 @@ function loadTeacherAppointments() {
       querySnapshot.forEach((doc) => {
         const appt = doc.data();
         html += `
-          <div class="appointment-item">
+          <div class="appointment-item pending">
             <p>🧑‍🎓|👩‍🎓 Student: <strong>${appt.studentName}</strong> (${appt.studentEmail})</p>
             <p>📅 Date/Time: ${appt.date} @ ${appt.time}</p>
             <p>📝 Reason: ${appt.reason}</p>
@@ -450,7 +453,36 @@ function loadTeacherAppointments() {
           </div>
         `;
       });
-      apptList.innerHTML = html || "<p>No pending appointments.</p>";
+      pendingList.innerHTML = html || "<p>No pending appointments.</p>";
+    });
+
+  // ---------------- Load All Appointments ----------------
+  db.collection("appointments")
+    .where("teacherEmail", "==", user.email)
+    .orderBy("status") // optional, to group by status
+    .orderBy("date", "asc")
+    .orderBy("time", "asc")
+    .onSnapshot((querySnapshot) => {
+      let html = "";
+      querySnapshot.forEach((doc) => {
+        const appt = doc.data();
+        const statusClass =
+          appt.status === "Approved"
+            ? "approved"
+            : appt.status === "Rejected"
+            ? "rejected"
+            : "pending";
+
+        html += `
+          <div class="appointment-item ${statusClass}">
+            <p>🧑‍🎓|👩‍🎓 Student: <strong>${appt.studentName}</strong> (${appt.studentEmail})</p>
+            <p>📅 Date/Time: ${appt.date} @ ${appt.time}</p>
+            <p>📝 Reason: ${appt.reason}</p>
+            <p>➡️ Status: <strong>${appt.status}</strong></p>
+          </div>
+        `;
+      });
+      allList.innerHTML = html || "<p>No appointments found.</p>";
     });
 }
 
