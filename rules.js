@@ -397,7 +397,7 @@ function loadAllAppointments() {
 
           html += `
             <div class="appointment-item ${statusClass}">
-              <p>🧑‍🎓|👩‍🎓 Student: <strong>${appt.studentName}</strong> (${appt.studentEmail})</p>
+              <p>🎓 Student: <strong>${appt.studentName}</strong> (${appt.studentEmail})</p>
               <p>👨‍🏫|👩‍🏫 Teacher: <strong>${appt.teacherName}</strong> (${appt.teacherSubject})</p>
               <p>📅 Date/Time: ${appt.date} @ ${appt.time}</p>
               <p>➡️ Status: <strong>${appt.status}</strong></p>
@@ -407,7 +407,21 @@ function loadAllAppointments() {
         apptList.innerHTML = html || "<p>No appointments found.</p>";
       },
       (error) => {
-        apptList.innerHTML = `<p style="color:red;">Failed to load appointments. Please try again later.</p>`;
+        // If index is required, show user-friendly info
+        if (error.code === "failed-precondition") {
+          apptList.innerHTML = `
+            <p style="color:red;">
+              Failed to load appointments: Firestore requires a composite index for this query.<br>
+              <a href="https://console.firebase.google.com/v1/r/project/YOUR_PROJECT_ID/firestore/indexes?create_composite" target="_blank">Click here to create the index</a>
+            </p>
+          `;
+          console.error(
+            "Firestore query failed due to missing composite index. Create it here: ",
+            error
+          );
+        } else {
+          apptList.innerHTML = `<p style="color:red;">Failed to load appointments: ${error.message}</p>`;
+        }
       }
     );
 }
@@ -433,57 +447,66 @@ function loadTeacherAppointments() {
   pendingList.innerHTML = "Loading pending appointments...";
   allList.innerHTML = "Loading all appointments...";
 
-  // ---------------- Load Pending Appointments ----------------
+  // ---------------- Pending Appointments ----------------
   db.collection("appointments")
     .where("teacherEmail", "==", user.email)
     .where("status", "==", "Pending")
     .orderBy("date", "asc")
     .orderBy("time", "asc")
-    .onSnapshot((querySnapshot) => {
-      let html = "";
-      querySnapshot.forEach((doc) => {
-        const appt = doc.data();
-        html += `
-          <div class="appointment-item pending">
-            <p>🧑‍🎓|👩‍🎓 Student: <strong>${appt.studentName}</strong> (${appt.studentEmail})</p>
-            <p>📅 Date/Time: ${appt.date} @ ${appt.time}</p>
-            <p>📝 Reason: ${appt.reason}</p>
-            <button onclick="updateAppointmentStatus('${doc.id}', 'Approved')">✅ Approve</button>
-            <button onclick="updateAppointmentStatus('${doc.id}', 'Rejected')">❌ Reject</button>
-          </div>
-        `;
-      });
-      pendingList.innerHTML = html || "<p>No pending appointments.</p>";
-    });
+    .onSnapshot(
+      (querySnapshot) => {
+        let html = "";
+        querySnapshot.forEach((doc) => {
+          const appt = doc.data();
+          html += `
+            <div class="appointment-item pending">
+              <p>🎓 Student: <strong>${appt.studentName}</strong> (${appt.studentEmail})</p>
+              <p>📅 Date/Time: ${appt.date} @ ${appt.time}</p>
+              <p>📝 Reason: ${appt.reason}</p>
+              <button onclick="updateAppointmentStatus('${doc.id}', 'Approved')">✅ Approve</button>
+              <button onclick="updateAppointmentStatus('${doc.id}', 'Rejected')">❌ Reject</button>
+            </div>
+          `;
+        });
+        pendingList.innerHTML = html || "<p>No pending appointments.</p>";
+      },
+      (error) => {
+        pendingList.innerHTML = `<p style="color:red;">Failed to load pending appointments: ${error.message}</p>`;
+      }
+    );
 
-  // ---------------- Load All Appointments ----------------
+  // ---------------- All Appointments ----------------
   db.collection("appointments")
     .where("teacherEmail", "==", user.email)
-    .orderBy("status") // optional, to group by status
     .orderBy("date", "asc")
     .orderBy("time", "asc")
-    .onSnapshot((querySnapshot) => {
-      let html = "";
-      querySnapshot.forEach((doc) => {
-        const appt = doc.data();
-        const statusClass =
-          appt.status === "Approved"
-            ? "approved"
-            : appt.status === "Rejected"
-            ? "rejected"
-            : "pending";
+    .onSnapshot(
+      (querySnapshot) => {
+        let html = "";
+        querySnapshot.forEach((doc) => {
+          const appt = doc.data();
+          const statusClass =
+            appt.status === "Approved"
+              ? "approved"
+              : appt.status === "Rejected"
+              ? "rejected"
+              : "pending";
 
-        html += `
-          <div class="appointment-item ${statusClass}">
-            <p>🧑‍🎓|👩‍🎓 Student: <strong>${appt.studentName}</strong> (${appt.studentEmail})</p>
-            <p>📅 Date/Time: ${appt.date} @ ${appt.time}</p>
-            <p>📝 Reason: ${appt.reason}</p>
-            <p>➡️ Status: <strong>${appt.status}</strong></p>
-          </div>
-        `;
-      });
-      allList.innerHTML = html || "<p>No appointments found.</p>";
-    });
+          html += `
+            <div class="appointment-item ${statusClass}">
+              <p>🎓 Student: <strong>${appt.studentName}</strong> (${appt.studentEmail})</p>
+              <p>📅 Date/Time: ${appt.date} @ ${appt.time}</p>
+              <p>📝 Reason: ${appt.reason}</p>
+              <p>➡️ Status: <strong>${appt.status}</strong></p>
+            </div>
+          `;
+        });
+        allList.innerHTML = html || "<p>No appointments found.</p>";
+      },
+      (error) => {
+        allList.innerHTML = `<p style="color:red;">Failed to load all appointments: ${error.message}</p>`;
+      }
+    );
 }
 
 function loadTeacherMessages() {
@@ -501,7 +524,7 @@ function loadTeacherMessages() {
         const msg = doc.data();
         html += `
           <div class="message-item">
-            <p>🧑‍🎓|👩‍🎓 Student: <strong>${msg.studentName}</strong> (${
+            <p>🎓 Student: <strong>${msg.studentName}</strong> (${
           msg.studentEmail
         })</p>
             <p>💬 Message: ${msg.content}</p>
