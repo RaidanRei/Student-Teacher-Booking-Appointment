@@ -5,6 +5,7 @@
 This is a **modern appointment booking system** built with **HTML, CSS, and JavaScript**, now fully powered by **Firebase Authentication + Firebase Firestore** for real-time data, secure login, and multi-role dashboards (Admin, Teacher, Student).
 
 The project supports dynamic appointment management, messaging between student & teacher, real-time status updates, and Firestore-based role validation.
+
 ---
 
 ## 🌐 Live Demo
