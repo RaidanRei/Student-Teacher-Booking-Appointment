@@ -15,8 +15,12 @@ const showToast = (message) => {
 // 🛑 FIREBASE VARIABLES
 // The variables 'auth' (Firebase Auth) and 'db' (Firestore)
 // are assumed to be defined globally in all HTML files.
-// Realtime Database is explicitly NOT used in this project.
 // ======================================================
+
+// ================= VALIDATION CHECK =================
+if (!auth || !db) {
+  console.error("Firebase Auth or Firestore failed to initialize!");
+}
 
 // The user data stored in Session Storage after login
 let user = sessionStorage.getItem("currentUser")
@@ -27,7 +31,6 @@ let user = sessionStorage.getItem("currentUser")
  * Handles user logout across all pages. 🚪
  */
 function handleLogout() {
-  // 'auth' is assumed to be defined globally in the HTML script tag
   auth
     .signOut()
     .then(() => {
@@ -44,18 +47,15 @@ function handleLogout() {
  * Also handles routing based on user role after a successful login.
  */
 function checkAuth() {
-  // If the page is a dashboard but no user is logged in, redirect to index
   if (page !== "index.html" && !user) {
     window.location.href = "index.html";
     return;
   }
 
-  // Set the logout button event listener for all dashboard pages
   if (el("btn-logout")) {
     el("btn-logout").addEventListener("click", handleLogout);
   }
 
-  // Handle routing based on user role
   if (page !== "index.html" && user) {
     if (user.role === "Admin" && page !== "admin.html") {
       window.location.href = "admin.html";
@@ -65,13 +65,11 @@ function checkAuth() {
       window.location.href = "student.html";
     }
 
-    // Initialize dashboard-specific data
     if (page === "admin.html") initAdmin();
     if (page === "teacher.html") initTeacher();
     if (page === "student.html") initStudent();
   }
 
-  // If on the index page, set up login/register listeners
   if (page === "index.html") {
     setupAuthListeners();
   }
@@ -88,20 +86,13 @@ function updateFooterYear() {
 }
 
 // ======================================================
-// 👨‍💻 USER AUTHENTICATION & REGISTRATION (index.html)
+// 👨‍💻 USER AUTHENTICATION & REGISTRATION
 // ======================================================
-
-/**
- * Sets up event listeners for login and register buttons.
- */
 function setupAuthListeners() {
   el("btn-login")?.addEventListener("click", handleLogin);
   el("btn-register")?.addEventListener("click", handleRegister);
 }
 
-/**
- * Handles the login process. 🔑
- */
 function handleLogin() {
   const email = el("login-email").value;
   const password = el("login-password").value;
@@ -111,23 +102,19 @@ function handleLogin() {
     return;
   }
 
-  // 1. Authenticate with Firebase Auth
   auth
     .signInWithEmailAndPassword(email, password)
     .then((userCredential) => {
       const firebaseUser = userCredential.user;
 
-      // 2. Fetch user data from Firestore
       db.collection("users")
         .doc(firebaseUser.uid)
         .get()
         .then((doc) => {
           if (doc.exists) {
-            // Save user data to session storage
             const userData = { uid: firebaseUser.uid, ...doc.data() };
             sessionStorage.setItem("currentUser", JSON.stringify(userData));
 
-            // Redirect based on role
             if (userData.role === "Admin") {
               window.location.href = "admin.html";
             } else if (userData.role === "Teacher") {
@@ -136,7 +123,7 @@ function handleLogin() {
               window.location.href = "student.html";
             } else {
               showToast("Error: Unknown user role.");
-              auth.signOut(); // Log out unrecognized user
+              auth.signOut();
             }
           } else {
             showToast("User data not found in Firestore.");
@@ -153,9 +140,6 @@ function handleLogin() {
     });
 }
 
-/**
- * Handles the user registration process. 📝
- */
 function handleRegister() {
   const name = el("reg-name").value;
   const email = el("reg-email").value;
@@ -167,27 +151,25 @@ function handleRegister() {
     return;
   }
 
-  // 1. Create user in Firebase Auth
   auth
     .createUserWithEmailAndPassword(email, password)
     .then((userCredential) => {
       const firebaseUser = userCredential.user;
 
-      // 2. Save additional user data to Firestore
       db.collection("users")
         .doc(firebaseUser.uid)
         .set({
           name: name,
           email: email,
           role: role,
-          department: role === "Teacher" ? "N/A" : null, // Default value for Teacher/Student
+          department: role === "Teacher" ? "N/A" : null,
           subject: role === "Teacher" ? "N/A" : null,
+          status: role === "Student" ? "Pending" : null,
         })
         .then(() => {
           showToast(
             `Registration successful! You are registered as a ${role}. Please login.`
           );
-          // Auto-logout after registration to force a clean login
           auth.signOut();
         });
     })
@@ -197,24 +179,20 @@ function handleRegister() {
 }
 
 // ======================================================
-// 👑 ADMIN DASHBOARD LOGIC (admin.html)
+// 👑 ADMIN DASHBOARD LOGIC
 // ======================================================
-
-/**
- * Initializes the Admin dashboard data and listeners.
- */
 function initAdmin() {
-  el("admin-name").textContent = user?.name || "Admin";
-  el("admin-email").textContent = user?.email || "admin@school.com";
+  if (el("admin-name")) el("admin-name").textContent = user?.name || "Admin";
+  if (el("admin-email"))
+    el("admin-email").textContent = user?.email || "admin@example.com";
 
-  el("btn-add-teacher")?.addEventListener("click", addTeacher);
-  loadAllTeachers();
-  loadAllAppointments();
+  if (el("btn-add-teacher"))
+    el("btn-add-teacher").addEventListener("click", addTeacher);
+  if (el("teacher-list")) loadAllTeachers();
+  if (el("student-list")) loadPendingStudents();
+  if (el("all-appointments")) loadAllAppointments();
 }
 
-/**
- * Adds a new teacher user and saves their role/details to Firestore. ➕
- */
 function addTeacher() {
   const name = el("t-name").value;
   const dept = el("t-dept").value;
@@ -227,13 +205,11 @@ function addTeacher() {
     return;
   }
 
-  // 1. Create user in Firebase Auth
   auth
     .createUserWithEmailAndPassword(email, password)
     .then((userCredential) => {
       const firebaseUser = userCredential.user;
 
-      // 2. Save teacher data to Firestore
       db.collection("users")
         .doc(firebaseUser.uid)
         .set({
@@ -251,7 +227,7 @@ function addTeacher() {
             el("t-email").value =
             el("t-password").value =
               "";
-          loadAllTeachers(); // Refresh list
+          loadAllTeachers();
         });
     })
     .catch((error) => {
@@ -259,9 +235,6 @@ function addTeacher() {
     });
 }
 
-/**
- * Loads and displays all teacher data from Firestore.
- */
 function loadAllTeachers() {
   const teacherList = el("teacher-list");
   if (!teacherList) return;
@@ -275,15 +248,20 @@ function loadAllTeachers() {
       let html = "";
       querySnapshot.forEach((doc) => {
         const t = doc.data();
+        const docId = doc.id;
+
         html += `
-                    <div class="teacher-item">
-                        <p><strong>👨‍🏫|👩‍🏫 ${t.name}</strong></p>
-                        <p>📧 ${t.email}</p>
-                        <p>🏫 Dept: ${t.department}</p>
-                        <p>📚 Subject: ${t.subject}</p>
-                    </div>
-                `;
+          <div class="teacher-item" id="teacher-${docId}">
+            <p>📇Name: <strong>${t.name}</strong></p>
+            <p>📧Email: ${t.email}</p>
+            <p>🏫Department: ${t.department}</p>
+            <p>📚Subject: ${t.subject}</p>
+            <button onclick="updateTeacher('${docId}')" class="update">✏️ Update</button>
+            <button onclick="deleteTeacher('${docId}')" class="delete">🗑️ Delete</button>
+          </div>
+        `;
       });
+
       teacherList.innerHTML = html || "<p>No teachers found.</p>";
     })
     .catch((error) => {
@@ -291,9 +269,111 @@ function loadAllTeachers() {
     });
 }
 
-/**
- * Loads and displays all appointments for admin view.
- */
+function updateTeacher(docId) {
+  const name = prompt("Enter new name:");
+  if (!name) return;
+  const dept = prompt("Enter new department:");
+  if (!dept) return;
+  const subject = prompt("Enter new subject:");
+  if (!subject) return;
+
+  db.collection("users")
+    .doc(docId)
+    .update({ name, department: dept, subject })
+    .then(() => {
+      showToast("Teacher updated successfully!");
+      loadAllTeachers();
+    })
+    .catch((error) => {
+      showToast("Error updating teacher: " + error.message);
+    });
+}
+
+function deleteTeacher(docId) {
+  if (!confirm("Are you sure you want to delete this teacher?")) return;
+
+  db.collection("users")
+    .doc(docId)
+    .delete()
+    .then(() => {
+      showToast("Teacher deleted successfully!");
+      loadAllTeachers();
+    })
+    .catch((error) => {
+      showToast("Error deleting teacher: " + error.message);
+    });
+}
+
+// ======================================================
+// 🧑‍🎓 PENDING STUDENTS LOGIC
+// ======================================================
+function loadPendingStudents() {
+  const studentList = el("student-list");
+  if (!studentList) return;
+
+  studentList.innerHTML = "Loading pending students...";
+
+  db.collection("users")
+    .where("role", "==", "Student")
+    .where("status", "==", "Pending")
+    .get()
+    .then((querySnapshot) => {
+      let html = "";
+      querySnapshot.forEach((doc) => {
+        const s = doc.data();
+        const docId = doc.id;
+
+        html += `
+          <div class="student-item" id="student-${docId}">
+            <p>📇Name: <strong>${s.name}</strong></p>
+            <p>📧Email: ${s.email}</p>
+            <button onclick="approveStudent('${docId}')" class="approve">✅ Approve Registration</button>
+            <button onclick="rejectStudent('${docId}')" class="reject">❌ Reject Registration</button>
+          </div>
+        `;
+      });
+
+      studentList.innerHTML = html || "<p>No pending students found.</p>";
+    })
+    .catch((error) => {
+      studentList.innerHTML = `<p>Error loading students: ${error.message}</p>`;
+    });
+}
+
+function approveStudent(docId) {
+  if (!confirm("Are you sure you want to approve this student?")) return;
+
+  db.collection("users")
+    .doc(docId)
+    .update({ status: "Active" })
+    .then(() => {
+      showToast("Student registration approved!");
+      loadPendingStudents();
+    })
+    .catch((error) => {
+      showToast("Error approving student: " + error.message);
+    });
+}
+
+function rejectStudent(docId) {
+  if (!confirm("Are you sure you want to reject this student registration?"))
+    return;
+
+  db.collection("users")
+    .doc(docId)
+    .delete()
+    .then(() => {
+      showToast("Student registration rejected and removed.");
+      loadPendingStudents();
+    })
+    .catch((error) => {
+      showToast("Error rejecting student: " + error.message);
+    });
+}
+
+// ======================================================
+// LOAD ADMIN APPOINTMENTS
+// ======================================================
 function loadAllAppointments() {
   const apptList = el("all-appointments");
   if (!apptList) return;
@@ -303,70 +383,11 @@ function loadAllAppointments() {
   db.collection("appointments")
     .orderBy("date", "asc")
     .orderBy("time", "asc")
-    .get()
-    .then((querySnapshot) => {
-      let html = "";
-      querySnapshot.forEach((doc) => {
-        const appt = doc.data();
-        const docId = doc.id;
-        const statusClass =
-          appt.status === "Approved"
-            ? "approved"
-            : appt.status === "Rejected"
-            ? "rejected"
-            : "pending";
-
-        html += `
-                    <div class="appointment-item ${statusClass}">
-                        <p>🧑‍🎓|👩‍🎓 Student: <strong>${appt.studentName}</strong> (${appt.studentEmail})</p>
-                        <p>👨‍🏫|👩‍🏫 Teacher: <strong>${appt.teacherName}</strong> (${appt.teacherSubject})</p>
-                        <p>📅 Date/Time: ${appt.date} @ ${appt.time}</p>
-                        <p>➡️ Status: <strong>${appt.status}</strong></p>
-                    </div>
-                `;
-      });
-      apptList.innerHTML = html || "<p>No appointments found.</p>";
-    })
-    .catch((error) => {
-      apptList.innerHTML = `<p>Error loading appointments: ${error.message}</p>`;
-    });
-}
-
-// ======================================================
-// 👨‍🏫 TEACHER DASHBOARD LOGIC (teacher.html)
-// ======================================================
-
-/**
- * Initializes the Teacher dashboard data and listeners.
- */
-function initTeacher() {
-  el("teacher-name").textContent = user?.name || "Teacher";
-  el("teacher-email").textContent = user?.email || "teacher@school.com";
-  el("teacher-dept").textContent = user?.department || "N/A";
-  el("teacher-subject").textContent = user?.subject || "N/A";
-
-  loadTeacherAppointments();
-}
-
-/**
- * Loads appointments specifically for the logged-in teacher.
- */
-function loadTeacherAppointments() {
-  const apptList = el("teacher-appointments");
-  if (!apptList) return;
-
-  apptList.innerHTML = "Loading appointments...";
-
-  db.collection("appointments")
-    .where("teacherEmail", "==", user.email)
-    .orderBy("date", "asc")
-    .orderBy("time", "asc")
     .onSnapshot(
       (querySnapshot) => {
         let html = "";
         querySnapshot.forEach((doc) => {
           const appt = doc.data();
-          const docId = doc.id;
           const statusClass =
             appt.status === "Approved"
               ? "approved"
@@ -375,36 +396,109 @@ function loadTeacherAppointments() {
               : "pending";
 
           html += `
-                        <div class="appointment-item ${statusClass}">
-                            <p>🧑‍🎓|👩‍🎓 Student: <strong>${
-                              appt.studentName
-                            }</strong> (${appt.studentEmail})</p>
-                            <p>📅 Date/Time: ${appt.date} @ ${appt.time}</p>
-                            <p>➡️ Status: <strong>${appt.status}</strong></p>
-                            ${
-                              appt.status === "Pending"
-                                ? `
-                                <button onclick="updateAppointmentStatus('${docId}', 'Approved')" class="approve">✅ Approve</button>
-                                <button onclick="updateAppointmentStatus('${docId}', 'Rejected')" class="reject">❌ Reject</button>
-                                `
-                                : ""
-                            }
-                        </div>
-                    `;
+            <div class="appointment-item ${statusClass}">
+              <p>🧑‍🎓|👩‍🎓 Student: <strong>${appt.studentName}</strong> (${appt.studentEmail})</p>
+              <p>👨‍🏫|👩‍🏫 Teacher: <strong>${appt.teacherName}</strong> (${appt.teacherSubject})</p>
+              <p>📅 Date/Time: ${appt.date} @ ${appt.time}</p>
+              <p>➡️ Status: <strong>${appt.status}</strong></p>
+            </div>
+          `;
         });
-        apptList.innerHTML =
-          html || "<p>You have no appointments requests.</p>";
+        apptList.innerHTML = html || "<p>No appointments found.</p>";
       },
       (error) => {
-        apptList.innerHTML = `<p>Error loading appointments: ${error.message}</p>`;
+        apptList.innerHTML = `<p style="color:red;">Failed to load appointments. Please try again later.</p>`;
       }
     );
 }
 
-/**
- * Updates the status of an appointment (Approved/Rejected).
- * This function needs to be global because it's called directly from the HTML onclick.
- */
+// ======================================================
+// 👨‍🏫 TEACHER DASHBOARD LOGIC
+// ======================================================
+function initTeacher() {
+  el("teacher-name").textContent = user?.name || "Teacher";
+  el("teacher-email").textContent = user?.email || "teacher@school.com";
+  el("teacher-dept").textContent = user?.department || "N/A";
+  el("teacher-subject").textContent = user?.subject || "N/A";
+
+  loadTeacherAppointments();
+  loadTeacherMessages();
+}
+
+function loadTeacherAppointments() {
+  const apptList = el("pending-appointments");
+  if (!apptList) return;
+
+  apptList.innerHTML = "Loading appointments...";
+
+  db.collection("appointments")
+    .where("teacherEmail", "==", user.email)
+    .where("status", "==", "Pending")
+    .orderBy("date", "asc")
+    .orderBy("time", "asc")
+    .onSnapshot((querySnapshot) => {
+      let html = "";
+      querySnapshot.forEach((doc) => {
+        const appt = doc.data();
+        html += `
+          <div class="appointment-item">
+            <p>🧑‍🎓|👩‍🎓 Student: <strong>${appt.studentName}</strong> (${appt.studentEmail})</p>
+            <p>📅 Date/Time: ${appt.date} @ ${appt.time}</p>
+            <p>📝 Reason: ${appt.reason}</p>
+            <button onclick="updateAppointmentStatus('${doc.id}', 'Approved')">✅ Approve</button>
+            <button onclick="updateAppointmentStatus('${doc.id}', 'Rejected')">❌ Reject</button>
+          </div>
+        `;
+      });
+      apptList.innerHTML = html || "<p>No pending appointments.</p>";
+    });
+}
+
+function loadTeacherMessages() {
+  const msgList = el("message-list");
+  if (!msgList) return;
+
+  msgList.innerHTML = "Loading messages from students...";
+
+  db.collection("messages")
+    .where("teacherEmail", "==", user.email)
+    .orderBy("createdAt", "desc")
+    .onSnapshot((querySnapshot) => {
+      let html = "";
+      querySnapshot.forEach((doc) => {
+        const msg = doc.data();
+        html += `
+          <div class="message-item">
+            <p>🧑‍🎓|👩‍🎓 Student: <strong>${msg.studentName}</strong> (${
+          msg.studentEmail
+        })</p>
+            <p>💬 Message: ${msg.content}</p>
+            <p>🕒 Sent At: ${
+              msg.createdAt?.toDate().toLocaleString() || "Unknown"
+            }</p>
+            <button onclick="replyToMessage('${doc.id}')">✉️ Reply</button>
+          </div>
+        `;
+      });
+      msgList.innerHTML = html || "<p>No messages from students.</p>";
+    });
+}
+
+window.replyToMessage = function (docId) {
+  const reply = prompt("Enter your reply message:");
+  if (!reply) return;
+
+  db.collection("messages")
+    .doc(docId)
+    .update({ teacherReply: reply })
+    .then(() => {
+      showToast("Reply sent successfully!");
+    })
+    .catch((error) => {
+      showToast("Error sending reply: " + error.message);
+    });
+};
+
 window.updateAppointmentStatus = function (docId, newStatus) {
   if (
     !confirm(
@@ -418,7 +512,6 @@ window.updateAppointmentStatus = function (docId, newStatus) {
     .update({ status: newStatus })
     .then(() => {
       showToast(`Appointment successfully ${newStatus.toLowerCase()}.`);
-      // The loadTeacherAppointments() uses onSnapshot, so it will refresh automatically
     })
     .catch((error) => {
       showToast(`Error updating appointment: ${error.message}`);
@@ -426,27 +519,115 @@ window.updateAppointmentStatus = function (docId, newStatus) {
 };
 
 // ======================================================
-// 🧑‍🎓 STUDENT DASHBOARD LOGIC (student.html)
+// 🧑‍🎓 STUDENT DASHBOARD LOGIC
 // ======================================================
-
-/**
- * Initializes the Student dashboard data and listeners.
- */
 function initStudent() {
   el("student-name").textContent = user?.name || "Student";
   el("student-email").textContent = user?.email || "student@school.com";
+  el("student-dept").textContent = user?.department || "N/A";
+  el("student-subject").textContent = user?.subject || "N/A";
 
   el("btn-request-appt")?.addEventListener("click", requestAppointment);
+  el("btn-send-msg")?.addEventListener("click", sendMessage);
 
-  // Initialize Student dashboard data loads
   loadTeachers();
   loadMyAppointments();
-  // loadMyMessages(); // ⚠️ DELETED: Removed Realtime Database message logic
+  loadMyMessages();
 }
 
-/**
- * Loads all available teachers to populate the dropdown list.
- */
+function sendMessage() {
+  const teacherSelect = el("teacher-select");
+  const content = el("msg-content").value;
+
+  if (!teacherSelect.value || !content) {
+    showToast("Please select a teacher and enter a message.");
+    return;
+  }
+
+  const selectedOption = teacherSelect.options[teacherSelect.selectedIndex];
+  const teacherEmail = selectedOption.value;
+  const teacherName = selectedOption.getAttribute("data-name");
+
+  db.collection("messages")
+    .add({
+      studentUid: user.uid,
+      studentName: user.name,
+      studentEmail: user.email,
+      teacherEmail: teacherEmail,
+      teacherName: teacherName,
+      content: content,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    })
+    .then(() => {
+      showToast("Message sent to teacher successfully!");
+      el("msg-content").value = "";
+    })
+    .catch((error) => {
+      showToast("Error sending message: " + error.message);
+    });
+}
+
+function loadMyMessages() {
+  const msgList = el("my-messages");
+  if (!msgList) return;
+
+  msgList.innerHTML = "Loading messages...";
+
+  db.collection("messages")
+    .where("studentEmail", "==", user.email)
+    .orderBy("createdAt", "desc")
+    .onSnapshot(
+      (querySnapshot) => {
+        let html = "";
+        querySnapshot.forEach((doc) => {
+          const msg = doc.data();
+          const docId = doc.id;
+
+          html += `
+            <div class="message-item" id="msg-${docId}">
+              <p>👨‍🏫|👩‍🏫 Teacher: <strong>${msg.teacherName}</strong> (${
+            msg.teacherEmail
+          })</p>
+              <p>💬 Message: ${msg.content}</p>
+              <p>🕒 Sent At: ${
+                msg.createdAt?.toDate().toLocaleString() || "Unknown"
+              }</p>
+              ${
+                msg.teacherReply
+                  ? `<p>✉️ Reply: ${msg.teacherReply}</p>`
+                  : `<p>✉️ Reply: Pending</p>`
+              }
+            </div>
+          `;
+        });
+
+        msgList.innerHTML = html || "<p>No messages yet.</p>";
+      },
+      (error) => {
+        msgList.innerHTML = `<p>Error loading messages: ${error.message}</p>`;
+      }
+    );
+}
+
+window.updateAppointmentStatus = function (docId, newStatus) {
+  if (
+    !confirm(
+      `Are you sure you want to change this appointment status to ${newStatus}?`
+    )
+  )
+    return;
+
+  db.collection("appointments")
+    .doc(docId)
+    .update({ status: newStatus })
+    .then(() => {
+      showToast(`Appointment successfully ${newStatus.toLowerCase()}.`);
+    })
+    .catch((error) => {
+      showToast(`Error updating appointment: ${error.message}`);
+    });
+};
+
 function loadTeachers() {
   const teacherSelect = el("teacher-select");
   if (!teacherSelect) return;
@@ -472,9 +653,6 @@ function loadTeachers() {
     });
 }
 
-/**
- * Handles the student requesting a new appointment. 🙋‍♀️
- */
 function requestAppointment() {
   const teacherSelect = el("teacher-select");
   const teacherEmail = teacherSelect.value;
@@ -482,45 +660,43 @@ function requestAppointment() {
   const time = el("appt-time").value;
   const reason = el("appt-reason").value;
 
+  // ================= FORM VALIDATION =================
   if (!teacherEmail || !date || !time || !reason) {
     showToast("Please fill in all appointment details.");
     return;
   }
 
-  // Get selected teacher's full name and subject from the dropdown options
   const selectedOption = teacherSelect.options[teacherSelect.selectedIndex];
   const teacherName = selectedOption.getAttribute("data-name");
   const teacherSubject = selectedOption.getAttribute("data-subject");
+  const teacherUid = selectedOption.getAttribute("data-uid"); // <- UID
 
-  // Save appointment request to Firestore
   db.collection("appointments")
     .add({
       studentUid: user.uid,
       studentName: user.name,
       studentEmail: user.email,
+      teacherUid: teacherUid,
       teacherEmail: teacherEmail,
       teacherName: teacherName,
       teacherSubject: teacherSubject,
       date: date,
       time: time,
       reason: reason,
-      status: "Pending", // Default status
+      status: "Pending",
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     })
     .then(() => {
       showToast(
         "Appointment request sent successfully! Awaiting teacher approval."
       );
-      loadMyAppointments(); // Refresh the list
+      loadMyAppointments();
     })
     .catch((error) => {
       showToast("Error sending appointment request: " + error.message);
     });
 }
 
-/**
- * Loads and displays the logged-in student's appointments.
- */
 function loadMyAppointments() {
   const apptList = el("my-appointments");
   if (!apptList) return;
@@ -533,6 +709,7 @@ function loadMyAppointments() {
     .orderBy("time", "asc")
     .onSnapshot(
       (querySnapshot) => {
+        console.log("Appointments found:", querySnapshot.size);
         let html = "";
         querySnapshot.forEach((doc) => {
           const appt = doc.data();
@@ -546,7 +723,7 @@ function loadMyAppointments() {
 
           html += `
                         <div class="appointment-item ${statusClass}">
-                            <p>👨‍🏫|👩‍🏫 Teacher: <strong>${
+                            <p>📇 Teacher: <strong>${
                               appt.teacherName
                             }</strong> (${appt.teacherSubject})</p>
                             <p>📅 Date/Time: ${appt.date} @ ${appt.time}</p>
@@ -569,10 +746,6 @@ function loadMyAppointments() {
     );
 }
 
-/**
- * Allows the student to cancel a pending appointment request. ❌
- * This function needs to be global because it's called directly from the HTML onclick.
- */
 window.cancelAppointment = function (docId) {
   if (!confirm("Are you sure you want to cancel this appointment request?"))
     return;
@@ -582,7 +755,6 @@ window.cancelAppointment = function (docId) {
     .delete()
     .then(() => {
       showToast("Appointment successfully canceled.");
-      // The loadMyAppointments() uses onSnapshot, so it will refresh automatically
     })
     .catch((error) => {
       showToast(`Error cancelling appointment: ${error.message}`);
